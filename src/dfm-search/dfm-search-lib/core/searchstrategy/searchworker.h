@@ -29,6 +29,15 @@ public:
 
     void setStrategyFactory(std::unique_ptr<SearchStrategyFactory> factory);
 
+    void setEngineCancelledFlag(std::atomic<bool> *flag)
+    {
+        if (!flag) {
+            qWarning() << "SearchWorker: engine cancelled flag is null, ignored";
+            return;
+        }
+        m_engineCancelled = flag;
+    }
+
 public Q_SLOTS:
     /**
      * @brief 执行搜索操作
@@ -36,11 +45,6 @@ public Q_SLOTS:
     void doSearch(const DFMSEARCH::SearchQuery &query,
                   const DFMSEARCH::SearchOptions &options,
                   DFMSEARCH::SearchType searchType);
-
-    /**
-     * @brief 取消搜索操作
-     */
-    void cancelSearch();
 
 Q_SIGNALS:
     /**
@@ -61,6 +65,7 @@ Q_SIGNALS:
 private:
     std::unique_ptr<SearchStrategyFactory> m_strategyFactory;
     std::unique_ptr<BaseSearchStrategy> m_strategy;
+    std::atomic<bool> *m_engineCancelled { nullptr };
 };
 
 /**

@@ -5,6 +5,7 @@
 #define BASESEARCHSTRATEGY_H
 
 #include <QObject>
+#include <atomic>
 #include <dfm-search/searchquery.h>
 #include <dfm-search/searchoptions.h>
 #include <dfm-search/searchresult.h>
@@ -53,6 +54,22 @@ public:
      */
     virtual void cancel() = 0;
 
+    /**
+     * @brief 注入引擎级取消标志指针
+     *
+     * 注入后策略读取引擎的 atomic flag。flag 为空时回退到策略自身的
+     * m_cancelled 并告警，保证 m_cancelledRef 始终非空，避免空指针解引用。
+     */
+    void setCancelledFlag(std::atomic<bool> *flag)
+    {
+        if (!flag) {
+            qWarning() << "BaseSearchStrategy: cancelled flag is null, fallback to local flag "
+                          "(cancellation may not respond to engine cancel)";
+            return;
+        }
+        m_cancelledRef = flag;
+    }
+
 Q_SIGNALS:
     /**
      * @brief 找到搜索结果信号
@@ -73,6 +90,7 @@ protected:
     SearchOptions m_options;
     SearchResultList m_results;
     std::atomic<bool> m_cancelled { false };
+    std::atomic<bool> *m_cancelledRef { &m_cancelled };
 };
 
 DFM_SEARCH_END_NS
